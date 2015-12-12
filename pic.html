@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>HighViz</title>
+</head>      
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script
+	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
+    
+      <script type="text/javascript" src="https://fb.me/react-with-addons-0.14.0.js"></script>
+    
+      <script type="text/javascript" src="https://fb.me/react-dom-0.14.0.js"></script>
+
+
+
+
+<body>
+
+<div id='interface1'></div>
+
+<script type='text/babel'>
+
+function getImageLinksFromFlickrApi(tag) {
+	var imgs = [];
+	var flickerAPI = "http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?";
+	$.getJSON(flickerAPI, {
+		tags: tag,
+		tagmode: "any",
+		format: "json"
+	}).done(function(data) {
+		$.each(data.items, function(i, item) {
+			imgs.push(item.media.m);
+		});
+	});
+	return imgs;
+}
+
+function getImages(entities) {
+	var entitiesToImages = {};
+	entities.forEach(function(entity) {
+		$.getJSON("https://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
+	    {
+	        tags: tag, 
+	        format: "json"
+	    },
+	    function(data) {
+	    	entitiesToImages[entity] = getImageLinksFromFlickrApi(entity);
+	    });
+	});
+	return entitiesToImages;
+}
+
+export ParamsInput = React.createClass({
+	getInitialState: function(){
+		return {
+			entities_text: 'forest,leaves',
+			weights_text: '80,20',
+			entities: ['forest','leaves'],
+			weights: [80,20]
+		};
+	},
+
+	entitiesOnChange: function(e){
+		this.setState({ entities_text: e.target.value, entities: e.target.value.split(',') })
+	},
+
+	weightsOnChange: function(e){
+		this.setState({ weights_text: e.target.value, weights: e.target.value.split(',') })
+	},
+
+	weightsAndEntities: function(){
+		var self = this;
+		var waes = [];
+		var i = 0;
+		this.state.entities.map(function(entity){
+			var weight = self.state.weights[i];
+			if(weight) {
+				waes.push({ entity: entity , weight: weight });
+			}
+			i++;
+		})
+		return waes;
+	},
+
+	render: function(){
+		var properties = JSON.stringify(this.weightsAndEntities());
+		var imgs = getImageLinksFromFlickrApi(this.state.entities[0]);
+
+		return (
+			<div>
+				{properties}
+
+				<label>entities:</label><input type='text' value={this.state.entities_text} onChange={this.entitiesOnChange}/>
+				<label>weights:</label><input type='text' value={this.state.weights_text} onChange={this.weightsOnChange}/>
+
+				{imgs.map(function(img){ return <img src={img}/> })}
+
+			</div>
+		);
+	}
+
+})
+
+ReactDOM.render(<ParamsInput/>, document.getElementById('interface1'));
+
+</script>
+
+</body>
+</html>
