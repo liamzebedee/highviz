@@ -3,7 +3,8 @@
 <head>
 	<title>HighViz</title>
 </head>      
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 	<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/babel-core/5.8.24/browser.js"></script>
     
       <script type="text/javascript" src="https://fb.me/react-with-addons-0.14.0.js"></script>
@@ -20,36 +21,30 @@
 <script type='text/babel'>
 
 function getImageLinksFromFlickrApi(tag) {
-	var imgs = [];
-	var flickerAPI = "http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?";
-	$.getJSON(flickerAPI, {
+	var flickrAPI = "http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?";
+	return $.getJSON(flickrAPI, {
 		tags: tag,
 		tagmode: "any",
 		format: "json"
-	}).done(function(data) {
-		$.each(data.items, function(i, item) {
-			imgs.push(item.media.m);
-		});
+	}).then(function(data) {
+		return data.items.map(function(item) { return item.media.m; });
 	});
-	return imgs;
 }
 
-function getImages(entities) {
+function getImagesForEntities(entities) {
 	var entitiesToImages = {};
+	var dfd = $.Deferred();
+
 	entities.forEach(function(entity) {
-		$.getJSON("https://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?",
-	    {
-	        tags: tag, 
-	        format: "json"
-	    },
-	    function(data) {
-	    	entitiesToImages[entity] = getImageLinksFromFlickrApi(entity);
-	    });
+		getImageLinksFromFlickrApi(entity).then(function(links){
+			entitiesToImages[entity] = links
+		})
 	});
-	return entitiesToImages;
+
+	return dfd.promise();
 }
 
-export ParamsInput = React.createClass({
+var ParamsInput = React.createClass({
 	getInitialState: function(){
 		return {
 			entities_text: 'forest,leaves',
@@ -81,18 +76,26 @@ export ParamsInput = React.createClass({
 		return waes;
 	},
 
+	getImages: function() {
+		var self = this;
+		getImageLinksFromFlickrApi(this.state.entities[0]).then(function(data){
+			self.setState({ imgs: data.map(function(img){ return <img src={img}/> }) })
+		});
+	},
+
+	componentDidMount: function() {
+		this.getImages();
+	},
+
 	render: function(){
-		var properties = JSON.stringify(this.weightsAndEntities());
-		var imgs = getImageLinksFromFlickrApi(this.state.entities[0]);
+		this.getImages();
 
 		return (
 			<div>
-				{properties}
-
 				<label>entities:</label><input type='text' value={this.state.entities_text} onChange={this.entitiesOnChange}/>
 				<label>weights:</label><input type='text' value={this.state.weights_text} onChange={this.weightsOnChange}/>
 
-				{imgs.map(function(img){ return <img src={img}/> })}
+				{this.state.imgs}
 
 			</div>
 		);
