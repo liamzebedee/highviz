@@ -20,6 +20,8 @@
 
 <script type='text/babel'>
 
+var entitiesToImages = new Map();
+
 function getImageLinksFromFlickrApi(tag) {
 	var flickrAPI = "http://api.flickr.com/services/feeds/photos_public.gne?jsoncallback=?";
 	return $.getJSON(flickrAPI, {
@@ -31,17 +33,25 @@ function getImageLinksFromFlickrApi(tag) {
 	});
 }
 
-function getImagesForEntities(entities) {
-	var entitiesToImages = {};
-	var dfd = $.Deferred();
+function loadImagesForEntities(entities) {
+	console.log('Loading images for entities');
 
-	entities.forEach(function(entity) {
+	var allImagesLoaded = $.Deferred();
+
+	$.when(...entities.map(function(entity){
+		if(entitiesToImages.has(entity)) return; // cache
+
+		var imagesLoadedForEntity = $.Deferred();
 		getImageLinksFromFlickrApi(entity).then(function(links){
-			entitiesToImages[entity] = links
-		})
-	});
+			console.log('Loaded images for entity: "'+entity+'"');
+			entitiesToImages.set(entity, links)
+			imagesLoadedForEntity.resolve()
+		});
 
-	return dfd.promise();
+		return imagesLoadedForEntity;
+	})).then(() => { allImagesLoaded.resolve() });
+
+	return allImagesLoaded.promise();
 }
 
 var ParamsInput = React.createClass({
@@ -78,18 +88,25 @@ var ParamsInput = React.createClass({
 
 	getImages: function() {
 		var self = this;
-		getImageLinksFromFlickrApi(this.state.entities[0]).then(function(data){
-			self.setState({ imgs: data.map(function(img){ return <img src={img}/> }) })
+		loadImagesForEntities([this.state.entities[0]]).then(function(){
+			var imgs = [];
+
+			for(var [entity, imgs] of entitiesToImages.entries()) {
+				for(var img of imgs) {
+					imgs.push(<img key={img} src={img}/>);
+				}
+			}
+			
+			self.setState({ imgs: imgs })
 		});
 	},
 
 	componentDidMount: function() {
-		this.getImages();
+		var self = this;
+		setTimeout(function(){self.getImages()}, 400);
 	},
 
 	render: function(){
-		this.getImages();
-
 		return (
 			<div>
 				<label>entities:</label><input type='text' value={this.state.entities_text} onChange={this.entitiesOnChange}/>
