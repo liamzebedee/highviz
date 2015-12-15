@@ -13,6 +13,19 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r73/three.js"></script>
 
+<style>
+img {
+	-webkit-filter: sepia(100%);
+	filter: sepia(100%);
+	-webkit-transition: .3s ease-in-out;
+	transition: .3s ease-in-out;
+}
+img:hover {
+	-webkit-filter: sepia(0);
+	filter: sepia(0);
+}
+
+</style>
 
 
 <body>
@@ -232,6 +245,8 @@ var ParamsInput = React.createClass({
 			var loadedImgs = [];
 			var i = 0;
 
+			var x = entitiesToImages
+
 			for(var [entity, imgs] of entitiesToImages.entries()) {
 				for(var img of imgs.items) {
 					i++;
@@ -244,13 +259,12 @@ var ParamsInput = React.createClass({
 	},
 
 	componentDidMount: function() {
-		var self = this;
-		// self.getImages();
+		this.applySettings();
 	},
 
 	componentDidUpdate: function(prevProps, prevState){
 		if(prevState.imgs !== this.state.imgs) {
-			document.querySelector('.grid').gridify({srcNode: 'img', margin: '1px', width: '250px', resizable: true});
+			document.querySelector('.grid').gridify({srcNode: 'img', margin: '1px', width: '400px', resizable: true});
 		}
 	},
 
