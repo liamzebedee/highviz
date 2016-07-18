@@ -20,6 +20,7 @@ img {
 	-webkit-transition: .3s ease-in-out;
 	transition: .3s ease-in-out;
 }
+
 img:hover {
 	-webkit-filter: sepia(0);
 	filter: sepia(0);
@@ -30,6 +31,7 @@ img:hover {
 
 <body>
 
+	
 <div id='interface1'></div>
 
 <div id="3d"></div>
@@ -203,6 +205,25 @@ function loadImagesForEntities(entities) {
 	return allImagesLoaded.promise();
 }
 
+function shuffle(array) {
+  var currentIndex = array.length, temporaryValue, randomIndex;
+
+  // While there remain elements to shuffle...
+  while (0 !== currentIndex) {
+
+    // Pick a remaining element...
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex -= 1;
+
+    // And swap it with the current element.
+    temporaryValue = array[currentIndex];
+    array[currentIndex] = array[randomIndex];
+    array[randomIndex] = temporaryValue;
+  }
+
+  return array;
+}
+
 var ParamsInput = React.createClass({
 	getInitialState: function(){
 		return {
@@ -243,15 +264,23 @@ var ParamsInput = React.createClass({
 		var self = this;
 		loadImagesForEntities(this.state.entities).then(function(){
 			var loadedImgs = [];
-			var i = 0;
 
-			var x = entitiesToImages
+			var x = entitiesToImages;
+
+			let imagesCollection = [];
 
 			for(var [entity, imgs] of entitiesToImages.entries()) {
 				for(var img of imgs.items) {
-					i++;
-					loadedImgs.push(<img key={i} src={img.media.m}/>);
+					imagesCollection.push(img);
 				}
+			}
+
+			shuffle(imagesCollection);
+
+			var i = 0;
+			for(let img of imagesCollection) {
+				i++;
+				loadedImgs.push(<img key={i} src={img.media.m} alt={entity}/>);
 			}
 			
 			self.setState({ imgs: loadedImgs })
